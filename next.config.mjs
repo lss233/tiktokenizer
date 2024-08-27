@@ -20,6 +20,10 @@ const config = {
     locales: ["en"],
     defaultLocale: "en",
   },
+  transpilePackages: [
+    "@radix-ui/react-dismissable-layer",
+    "@radix-ui/react-popover"
+  ],
 
   webpack(config) {
     config.experiments = {

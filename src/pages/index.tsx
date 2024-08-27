@@ -4,7 +4,7 @@ import {
   type NextPage,
 } from "next";
 import Head from "next/head";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Github, Twitter } from "lucide-react";
 
 import { ChatGPTEditor } from "../sections/ChatGPTEditor";
@@ -15,6 +15,8 @@ import { type AllOptions, isChatModel, isValidOption } from "~/models";
 import { createTokenizer } from "~/models/tokenizer";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/router";
+import { CustomModelPopup } from "~/sections/CustomModelPopup";
+import { oauthHandleRedirectIfPresent } from "@huggingface/hub";
 
 function useQueryParamsState() {
   const router = useRouter();
@@ -35,9 +37,18 @@ function useQueryParamsState() {
   return [params, setParams] as const;
 }
 
+async function checkOAuth() {
+  const oauthResult = await oauthHandleRedirectIfPresent()
+  if(oauthResult) {
+    localStorage.setItem("oauth", JSON.stringify(oauthResult));
+    console.log('fetched oauth result: ', oauthResult.accessToken)
+  }
+}
+
 const Home: NextPage<
   InferGetServerSidePropsType<typeof getServerSideProps>
 > = () => {
+  const [popUpVisible, setPopupVisible] = useState<boolean>(false);
   const [inputText, setInputText] = useState<string>("");
   const [model, setModel] = useQueryParamsState();
   const tokenizer = useQuery({
@@ -46,6 +57,10 @@ const Home: NextPage<
   });
 
   const tokens = tokenizer.data?.tokenize(inputText);
+
+  useEffect(() => {
+    checkOAuth();
+  });
 
   return (
     <>
@@ -61,14 +76,23 @@ const Home: NextPage<
             value={model}
             isLoading={tokenizer.isFetching}
             onChange={(update) => {
-              setModel(update);
-              if (isChatModel(update) !== isChatModel(model)) {
-                setInputText("");
+              if(update == "custom-models/custom-models") {
+                setPopupVisible(true)
+              } else {
+                setModel(update);
+                if (isChatModel(update) !== isChatModel(model)) {
+                  setInputText("");
+                }
               }
             }}
           />
         </div>
-
+        {popUpVisible && (
+          <CustomModelPopup onSelect={(modelId) => {
+            setPopupVisible(false)
+            setModel(modelId)
+          }} />
+        )}
         <div className="grid gap-4 md:grid-cols-2">
           <section className="flex flex-col gap-4">
             {isChatModel(model) && (

@@ -8,6 +8,7 @@ import {
   getTiktokenSegments,
   type Segment,
 } from "~/utils/segments";
+import { downloadFile } from "@huggingface/hub";
 
 export interface TokenizerResult {
   name: string;
@@ -90,12 +91,90 @@ export class OpenSourceTokenizer implements Tokenizer {
     model: z.infer<typeof openSourceModels>
   ): Promise<PreTrainedTokenizer> {
     // use current host as proxy if we're running on the client
-    if (typeof window !== "undefined") {
-      env.remoteHost = window.location.origin;
+    // if (typeof window !== "undefined") {
+    //   env.remoteHost = window.location.origin;
+    // }
+    // env.remotePathTemplate = "/hf/{model}";
+    // // Set to false for testing!
+    env.useBrowserCache = false;
+    if(!openSourceModels.safeParse(model).success) {
+      console.log('failed! hook from useCustomCache')
+      env.useBrowserCache = false;
+      env.useCustomCache = true
+      let accessToken = '';
+      const oauthResult = localStorage.getItem("oauth")
+      if (oauthResult) {
+        accessToken = JSON.parse(oauthResult)['accessToken'] ?? ''
+      }
+      const cache = new Map();
+      env.customCache = {
+        put(request: RequestInfo | URL, response: Response) {
+          console.log('customCache, put', request);
+          return Promise.resolve();
+        },
+        match(request: RequestInfo | URL, options?: CacheQueryOptions): Promise<Response | undefined> {
+          if(cache.has(request)) {
+            return Promise.resolve(cache.get(request))
+          }
+
+          let url;
+          try {
+            if (request instanceof Request) {
+              url = new URL(request.url);
+            } else if (typeof request === 'string' || request instanceof URL) {
+              if (!request.toString().startsWith('http')) {
+                return Promise.resolve(undefined);
+              }
+              url = new URL(request.toString());
+            } else {
+              throw new Error('Unsupported request type');
+            }
+      
+            // Verify whether it is a Huggingface URL
+            if (!url.hostname.endsWith('huggingface.co')) {
+              console.error('Not a Huggingface URL');
+              return Promise.resolve(undefined);
+            }
+      
+            const path = url.pathname.split('/resolve/main/')[1];
+            const modelId = url.pathname.split('/resolve/main/')[0].split('/').slice(1).join('/');
+      
+            if (!path || !modelId) {
+              console.error('Invalid URL format');
+              return Promise.resolve(undefined);
+            }
+      
+            return downloadFile({
+              repo: modelId,
+              path: path,
+              credentials: {
+                accessToken
+              }
+            })
+            .then(response => {
+              if (response) {
+                return response.text().then(body => {
+                  // Save the response text in the cache
+                  const resp = new Response(body, { status: 200 });
+                  cache.set(request, resp);
+                  return resp;
+                });
+              } else {
+                console.log('customCache, match', request, options);
+                return undefined;
+              }
+            })
+            .catch(error => {
+              console.error('Error during custom cache match:', error);
+              return undefined;
+            });
+          } catch (error) {
+            console.error('Error during custom cache match:', error);
+            return Promise.resolve(undefined);
+          }
+        }
+      };
     }
-    env.remotePathTemplate = "/hf/{model}";
-    // Set to false for testing!
-    // env.useBrowserCache = false;
     const t = await PreTrainedTokenizer.from_pretrained(model, {
       progress_callback: (progress: any) =>
         console.log(`loading "${model}"`, progress),
@@ -132,12 +211,18 @@ export async function createTokenizer(name: string): Promise<Tokenizer> {
     return new TiktokenTokenizer(oaiModel.data);
   }
 
-  const ossModel = openSourceModels.safeParse(name);
-  if (ossModel.success) {
-    console.log("loading tokenizer", ossModel.data);
-    const tokenizer = await OpenSourceTokenizer.load(ossModel.data);
-    console.log("loaded tokenizer", name);
-    return new OpenSourceTokenizer(tokenizer, name);
-  }
-  throw new Error("Invalid model or encoding");
+  console.log("loading tokenizer", name);
+  const tokenizer = await OpenSourceTokenizer.load(name);
+  console.log("loaded tokenizer", name);
+  return new OpenSourceTokenizer(tokenizer, name);
 }
+
+// export async function createTokenizerFromJson(tokenizer: string, tokenizer_config: string): Promise<Tokenizer> {
+//   console.log("createTokenizerFromJson")
+//   await PreTrainedTokenizer.from_pretrained(model, {
+//     progress_callback: (progress: any) =>
+//       console.log(`loading "${model}"`, progress),
+//   });
+  
+//   throw new Error("Invalid model or encoding");
+// }

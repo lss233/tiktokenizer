@@ -85,6 +85,13 @@ export function EncoderSelect(props: {
                     {value}
                   </CommandItem>
                 ))}
+                  <CommandItem
+                    key="custom-models"
+                    value="custom-models"
+                    onSelect={onSelect("custom-models/custom-models")}
+                  >
+                    Custom models
+                  </CommandItem>
             </CommandGroup>
 
             <CommandSeparator />

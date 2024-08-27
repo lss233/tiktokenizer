@@ -70,8 +70,8 @@ export const openSourceModels = z.enum([
   // "meta-llama/Llama-2-7b-hf",
   "codellama/CodeLlama-7b-hf",
   "codellama/CodeLlama-70b-hf",
-  "meta-llama/Meta-Llama-3-8B",
-  "meta-llama/Meta-Llama-3-70B",
+  // "meta-llama/Meta-Llama-3-8B",
+  // "meta-llama/Meta-Llama-3-70B",
   "microsoft/phi-2",
   "google/gemma-7b",
   // "mistralai/Mistral-7B-v0.1",
@@ -100,14 +100,18 @@ export const allModels = z.enum([
   ...openSourceModels.options,
 ]);
 
+export const utilModels = z.enum([
+  "custom-models/custom-models"
+])
 export type AllModels = z.infer<typeof allModels>;
 
 export const allOptions = z.enum([
   ...allModels.options,
   ...oaiEncodings.options,
+  ...utilModels.options,
 ]);
 
-export type AllOptions = z.infer<typeof allOptions>;
+export type AllOptions = z.infer<typeof allOptions> | string;
 
 export const MODELS = allModels.options;
 
@@ -132,5 +136,5 @@ export function isChatModel(
 }
 
 export function isValidOption(model: unknown): model is AllOptions {
-  return allOptions.safeParse(model).success;
+  return true || allOptions.safeParse(model).success;
 }
