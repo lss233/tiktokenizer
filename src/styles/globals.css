@@ -2,11 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import '@radix-ui/colors/black-alpha.css';
-@import '@radix-ui/colors/green.css';
-@import '@radix-ui/colors/gray.css';
-@import '@radix-ui/colors/mauve.css';
-@import '@radix-ui/colors/violet.css';
+
 /* reset */
 button,
 fieldset,
@@ -84,17 +80,6 @@ input {
 }
 .Button.green:focus {
   box-shadow: 0 0 0 2px var(--green-7);
-}
-
-.Button.gray {
-  background-color: var(--gray-4);
-  color: var(--gray-11);
-}
-.Button.gray:hover {
-  background-color: var(--gray-5);
-}
-.Button.gray:focus {
-  box-shadow: 0 0 0 2px var(--gray-7);
 }
 
 .IconButton {

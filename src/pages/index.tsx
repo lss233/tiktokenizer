@@ -39,7 +39,7 @@ function useQueryParamsState() {
 
 async function checkOAuth() {
   const oauthResult = await oauthHandleRedirectIfPresent()
-  if (oauthResult) {
+  if(oauthResult) {
     localStorage.setItem("oauth", JSON.stringify(oauthResult));
     console.log('fetched oauth result: ', oauthResult.accessToken)
   }
@@ -76,7 +76,7 @@ const Home: NextPage<
             value={model}
             isLoading={tokenizer.isFetching}
             onChange={(update) => {
-              if (update == "custom-models/custom-models") {
+              if(update == "custom-models/custom-models") {
                 setPopupVisible(true)
               } else {
                 setModel(update);
@@ -88,14 +88,10 @@ const Home: NextPage<
           />
         </div>
         {popUpVisible && (
-          <CustomModelPopup open={popUpVisible}
-            onSelect={(modelId) => {
-              setPopupVisible(false)
-              setModel(modelId)
-            }}
-            onOpenChange={(change) => {
-              setPopupVisible(change)
-            }}></CustomModelPopup>
+          <CustomModelPopup onSelect={(modelId) => {
+            setPopupVisible(false)
+            setModel(modelId)
+          }} />
         )}
         <div className="grid gap-4 md:grid-cols-2">
           <section className="flex flex-col gap-4">

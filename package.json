@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@huggingface/hub": "^0.15.1",
-    "@radix-ui/colors": "^3.0.0",
+    "@radix-ui/colors": "radix-ui/colors",
     "@radix-ui/react-checkbox": "^1.0.3",
     "@radix-ui/react-dialog": "^1.1.1",
     "@radix-ui/react-dismissable-layer": "^1.1.0",
