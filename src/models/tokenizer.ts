@@ -88,7 +88,7 @@ export class OpenSourceTokenizer implements Tokenizer {
   name: string;
 
   static async load(
-    model: z.infer<typeof openSourceModels>
+    model: z.infer<typeof openSourceModels> | string
   ): Promise<PreTrainedTokenizer> {
     // use current host as proxy if we're running on the client
     // if (typeof window !== "undefined") {
@@ -135,9 +135,8 @@ export class OpenSourceTokenizer implements Tokenizer {
               console.error('Not a Huggingface URL');
               return Promise.resolve(undefined);
             }
-      
             const path = url.pathname.split('/resolve/main/')[1];
-            const modelId = url.pathname.split('/resolve/main/')[0].split('/').slice(1).join('/');
+            const modelId = url.pathname.split('/resolve/main/')[0]!!.split('/').slice(1).join('/');
       
             if (!path || !modelId) {
               console.error('Invalid URL format');
