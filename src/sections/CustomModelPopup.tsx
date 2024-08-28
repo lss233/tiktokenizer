@@ -7,11 +7,12 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { oauthLoginUrl, oauthHandleRedirectIfPresent, downloadFile } from "@huggingface/hub";
 
 export function CustomModelPopup(props:
-  { onSelect: ((modelId: string) => void) }
+  { children?: React.ReactNode, open: boolean, onSelect: ((modelId: string) => void), onOpenChange: ((change: boolean) => void) }
 ) {
   const [modelId, setModelId] = useState("meta-llama/Meta-Llama-3-8B");
   const [tokenizerFile, setTokenizerFile] = useState(null);
   const [configFile, setConfigFile] = useState(null);
+  const [isLoading, setLoading] = useState(false);
   let accessToken = '';
   const oauthResult = localStorage.getItem("oauth")
   if (oauthResult) {
@@ -28,6 +29,10 @@ export function CustomModelPopup(props:
   }
 
   async function downloadTokenizer() {
+    if (isLoading) {
+      return
+    }
+    setLoading(true);
     const tokenizerJsonResp = await downloadFile({
       repo: modelId,
       path: 'tokenizer.json',
@@ -45,36 +50,12 @@ export function CustomModelPopup(props:
     })
     console.log(await tokenizerConfigJsonResp?.text())
     props.onSelect(modelId)
+    setLoading(false);
   }
-
-  // const onDrop = (acceptedFiles) => {
-  //   acceptedFiles.forEach((file) => {
-  //     if (file.name === "tokenizer.json") {
-  //       setTokenizerFile(file);
-  //     } else if (file.name === "tokenizer_config.json") {
-  //       setConfigFile(file);
-  //     }
-  //   });
-  // };
-
-  // const { getRootProps, getInputProps } = useDropzone({ onDrop });
-
-  // const handleLoadModel = () => {
-  //   if (modelId) {
-  //     // Logic to handle model loading by ID
-  //     console.log("Loading model from ID:", modelId);
-  //   } else if (tokenizerFile && configFile) {
-  //     // Logic to handle model loading from files
-  //     console.log("Loading model from files:", tokenizerFile, configFile);
-  //   } else {
-  //     console.error("Either model ID or both files must be provided.");
-  //   }
-  //   props.onClose();
-  // };
   return (
-    <Dialog.Root>
+    <Dialog.Root open={props.open} onOpenChange={props.onOpenChange}>
       <Dialog.Trigger asChild>
-        <button className="Button violet">Edit profile</button>
+        {props.children}
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="DialogOverlay" />
@@ -91,19 +72,31 @@ export function CustomModelPopup(props:
               value={modelId}
               onChange={e => setModelId(e.target.value)} />
           </fieldset>
-          {/* Sign in with huggingface button */}
-          {hfToken == "" && (
-            <img src="https://huggingface.co/datasets/huggingface/badges/resolve/main/sign-in-with-huggingface-lg.svg"
-              alt="Sign in with Hugging Face"
-              style={{ cursor: 'pointer' }}
-              id="signin"
-              onClick={hfLogin} />
-          )}
-          {hfToken != "" && (
-            <button className="Button green"
-              onClick={downloadTokenizer}
-            >Download</button>
-          )}
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            {/* Sign in with huggingface button */}
+            {hfToken == "" && (
+              <img src="https://huggingface.co/datasets/huggingface/badges/resolve/main/sign-in-with-huggingface-lg.svg"
+                alt="Sign in with Hugging Face"
+                style={{ cursor: 'pointer' }}
+                id="signin"
+                onClick={hfLogin} />
+            )}
+            {/* download button */}
+            {hfToken != "" && (
+              <button className={`Button ${isLoading ? 'gray' : 'green'}`}
+                disabled={isLoading}
+                onClick={downloadTokenizer}
+              >
+                <span className="flex items-center gap-2">
+                  <span>Download</span>
+                  {isLoading && (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-700 border-b-transparent" />
+                  )}
+                </span>
+              </button>
+            )}
+          </div>
+
           <Dialog.Description className="DialogDescription">
             Or upload a `tokenizer.json` and `tokenizer_config.json` from local disk.
           </Dialog.Description>

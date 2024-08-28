@@ -101,15 +101,11 @@ export const allModels = z.enum([
   ...openSourceModels.options,
 ]);
 
-export const utilModels = z.enum([
-  "custom-models/custom-models"
-])
 export type AllModels = z.infer<typeof allModels>;
 
 export const allOptions = z.enum([
   ...allModels.options,
   ...oaiEncodings.options,
-  ...utilModels.options,
 ]);
 
 export type AllOptions = z.infer<typeof allOptions> | string;
